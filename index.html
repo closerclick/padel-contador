@@ -59,6 +59,46 @@
     cursor: pointer;
   }
   .topbar button:active { background: #1f2937; }
+  .modo {
+    flex: 1.4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.6vw;
+    color: #9ca3af;
+    font-size: 1.7vh;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .modo #lblOro { color: #fff; }
+  .modo.ventaja #lblOro { color: #9ca3af; }
+  .modo.ventaja #lblVentaja { color: #fff; }
+  .switch {
+    position: relative;
+    width: 46px;
+    height: 26px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .switch input { display: none; }
+  .switch .pista {
+    position: absolute;
+    inset: 0;
+    background: #4b5563;
+    border-radius: 999px;
+    transition: background .2s;
+  }
+  .switch .bolita {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 20px; height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .2s;
+  }
+  .switch input:checked + .pista { background: #f59e0b; }
+  .switch input:checked + .pista + .bolita { transform: translateX(20px); }
 
   /* --- Marcador --- */
   .marcador {
@@ -79,8 +119,8 @@
     position: relative;
     overflow: hidden;
   }
-  .equipo.izq { background: #1d4ed8; }
-  .equipo.der { background: #b91c1c; }
+  .equipo.izq { background: #15803d; }
+  .equipo.der { background: #7c3aed; }
 
   /* equipo sin saque: levemente atenuado */
   .equipo:not(.activo) {
@@ -135,6 +175,9 @@
   .edit-nombre:active { background: rgba(255,255,255,.3); }
 
   .meta {
+    display: flex;
+    align-items: center;
+    gap: 1.4vw;
     font-size: 2vh;
     font-weight: 700;
     letter-spacing: .04em;
@@ -143,6 +186,26 @@
     margin-bottom: .4vh;
   }
   .meta .n { font-size: 2.6vh; }
+  .set-aj {
+    width: 6.5vw;
+    height: 6.5vw;
+    max-width: 30px;
+    max-height: 30px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.5);
+    background: rgba(255,255,255,.14);
+    color: #fff;
+    font-size: 3.6vw;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .set-aj:active { background: rgba(255,255,255,.35); }
 
   .puntos {
     font-size: 24vw;
@@ -174,14 +237,6 @@
     display: none;
   }
   body.tiebreak .tiebadge { display: block; }
-
-  .ganador {
-    position: absolute;
-    top: 1.2vh;
-    font-size: 2.4vh;
-    font-weight: 800;
-    color: #fde047;
-  }
 
   .toque {
     position: absolute;
@@ -316,60 +371,6 @@
     color: #9ca3af;
     font-size: 2vh;
   }
-
-  /* --- Ajustes --- */
-  .ajuste {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 3vw;
-    padding: 2vh 4vw;
-    border-bottom: 1px solid #374151;
-  }
-  .ajuste-label { font-size: 2vh; font-weight: 700; }
-  .ajuste-desc { font-size: 1.5vh; color: #9ca3af; margin-top: .3vh; }
-  .seg {
-    display: flex;
-    border: 1px solid #4b5563;
-    border-radius: 8px;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-  .seg button {
-    border: none;
-    background: #111827;
-    color: #cbd5e1;
-    font-size: 1.9vh;
-    font-weight: 700;
-    padding: 1vh 3.2vw;
-    cursor: pointer;
-  }
-  .seg button.sel { background: #2563eb; color: #fff; }
-  .switch {
-    position: relative;
-    width: 52px;
-    height: 30px;
-    flex-shrink: 0;
-    cursor: pointer;
-  }
-  .switch input { display: none; }
-  .switch .pista {
-    position: absolute;
-    inset: 0;
-    background: #4b5563;
-    border-radius: 999px;
-    transition: background .2s;
-  }
-  .switch .bolita {
-    position: absolute;
-    top: 3px; left: 3px;
-    width: 24px; height: 24px;
-    background: #fff;
-    border-radius: 50%;
-    transition: transform .2s;
-  }
-  .switch input:checked + .pista { background: #2563eb; }
-  .switch input:checked + .pista + .bolita { transform: translateX(22px); }
 </style>
 <!-- Analítica cookieless autohosteada (GoatCounter); no cuenta en localhost/LAN. -->
 <script>window.goatcounter={path:function(p){return location.hostname+p}}</script>
@@ -379,7 +380,14 @@
 
   <div class="topbar">
     <button id="btnResultados">📋 Resultados</button>
-    <button id="btnAjustes">⚙ Ajustes</button>
+    <div class="modo" id="modo">
+      <span id="lblVentaja">Ventaja</span>
+      <label class="switch">
+        <input type="checkbox" id="cfgPuntoOro">
+        <span class="pista"></span><span class="bolita"></span>
+      </label>
+      <span id="lblOro">Punto de oro</span>
+    </div>
     <button id="btnInstalar" style="display:none">⬇ Instalar</button>
   </div>
 
@@ -393,7 +401,6 @@
       <div class="puntos" id="ptsIzq">0</div>
       <div class="saque"></div>
       <div class="tiebadge">TIE-BREAK</div>
-      <div class="ganador" id="ganaIzq"></div>
       <div class="toque" id="toqueIzq">+1</div>
     </div>
     <div class="equipo der" id="eqDer">
@@ -405,7 +412,6 @@
       <div class="puntos" id="ptsDer">0</div>
       <div class="saque"></div>
       <div class="tiebadge">TIE-BREAK</div>
-      <div class="ganador" id="ganaDer"></div>
       <div class="toque" id="toqueDer">+1</div>
     </div>
   </div>
@@ -426,47 +432,15 @@
     </div>
   </div>
 
-  <div class="modal" id="modalAjustes">
-    <div class="modal-caja">
-      <div class="modal-head">
-        <h2>Ajustes</h2>
-        <button class="modal-cerrar" id="btnCerrarAjustes">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="ajuste">
-          <div>
-            <div class="ajuste-label">Punto de oro</div>
-            <div class="ajuste-desc">En 40-40 el siguiente punto define el juego (sin ventaja).</div>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="cfgPuntoOro">
-            <span class="pista"></span><span class="bolita"></span>
-          </label>
-        </div>
-        <div class="ajuste">
-          <div>
-            <div class="ajuste-label">Partido</div>
-            <div class="ajuste-desc">Sets necesarios para ganar.</div>
-          </div>
-          <div class="seg" id="cfgSets">
-            <button data-sets="1">Mejor de 1</button>
-            <button data-sets="2">Mejor de 3</button>
-            <button data-sets="3">Mejor de 5</button>
-          </div>
-        </div>
-        <div class="vacio" style="font-size:1.6vh">Cambiar un ajuste reinicia el partido en curso.</div>
-      </div>
-    </div>
-  </div>
-
 <script>
   const $ = id => document.getElementById(id);
   const STORAGE_KEY = 'padel_resultados';
   const ACTUAL_KEY  = 'padel_actual';
   const CONFIG_KEY  = 'padel_config';
 
-  // Configuración del partido.
-  const config = { puntoOro: false, setsParaGanar: 2 };
+  // Configuración del partido. Por defecto: punto de oro. El partido no termina
+  // solo: los sets se acumulan sin límite (lo cierra el botón Nuevo).
+  const config = { puntoOro: true };
 
   // Estado del partido. p = puntos del juego actual (0..40 / ventaja, o nº en tie-break),
   // j = juegos del set actual, s = sets ganados.
@@ -476,8 +450,6 @@
     saque: 'izq',
     tiebreak: false,
     setsHist: [],     // sets cerrados: [{ izq, der }] (juegos)
-    finalizado: false,
-    ganador: null,
     historial: []     // instantáneas para deshacer
   };
 
@@ -488,10 +460,7 @@
   function leerConfig() {
     try {
       const c = JSON.parse(localStorage.getItem(CONFIG_KEY));
-      if (c) {
-        config.puntoOro = !!c.puntoOro;
-        config.setsParaGanar = c.setsParaGanar || 2;
-      }
+      if (c && typeof c.puntoOro === 'boolean') config.puntoOro = c.puntoOro;
     } catch {}
   }
   function guardarConfig() {
@@ -504,9 +473,7 @@
       der: { ...estado.der },
       saque: estado.saque,
       tiebreak: estado.tiebreak,
-      setsHist: estado.setsHist.map(s => ({ ...s })),
-      finalizado: estado.finalizado,
-      ganador: estado.ganador
+      setsHist: estado.setsHist.map(s => ({ ...s }))
     };
   }
   function aplicar(s) {
@@ -515,8 +482,6 @@
     estado.saque = s.saque;
     estado.tiebreak = s.tiebreak;
     estado.setsHist = s.setsHist.map(x => ({ ...x }));
-    estado.finalizado = s.finalizado;
-    estado.ganador = s.ganador;
   }
   function guardar() { estado.historial.push(snapshot()); }
 
@@ -541,7 +506,6 @@
 
   // --- Lógica de puntuación ---
   function ganarPunto(lado) {
-    if (estado.finalizado) return;
     guardar();
     const o = otro(lado);
     const A = estado[lado], B = estado[o];
@@ -580,10 +544,15 @@
     estado.izq.j = 0; estado.der.j = 0;
     estado.izq.p = 0; estado.der.p = 0;
     estado.tiebreak = false;
-    if (estado[lado].s >= config.setsParaGanar) {
-      estado.finalizado = true;
-      estado.ganador = lado;
-    }
+  }
+
+  // Ajuste manual de sets (+/−), independiente del juego en curso.
+  function ajustarSet(lado, delta) {
+    const nuevo = estado[lado].s + delta;
+    if (nuevo < 0) return;
+    guardar();
+    estado[lado].s = nuevo;
+    render();
   }
 
   function dispPunto(lado) {
@@ -603,14 +572,17 @@
     ['izq', 'der'].forEach(lado => {
       const d = dispPunto(lado);
       const pts = $('pts' + cap(lado));
-      pts.textContent = estado.finalizado ? '–' : d.txt;
+      pts.textContent = d.txt;
       pts.classList.toggle('ad', d.ad);
       $('meta' + cap(lado)).innerHTML =
-        `<span class="n">${estado[lado].s}</span> sets · <span class="n">${estado[lado].j}</span> juegos`;
-      $('eq' + cap(lado)).classList.toggle('activo', !estado.finalizado && estado.saque === lado);
-      $('gana' + cap(lado)).textContent =
-        (estado.finalizado && estado.ganador === lado) ? '🏆 GANADOR' : '';
+        `<button class="set-aj" data-lado="${lado}" data-delta="-1">−</button>` +
+        `<span class="n">${estado[lado].s}</span> sets` +
+        `<button class="set-aj" data-lado="${lado}" data-delta="1">+</button>` +
+        ` · <span class="n">${estado[lado].j}</span> juegos`;
+      $('eq' + cap(lado)).classList.toggle('activo', estado.saque === lado);
     });
+    $('cfgPuntoOro').checked = config.puntoOro;
+    $('modo').classList.toggle('ventaja', !config.puntoOro);
     guardarActual();
   }
 
@@ -631,7 +603,6 @@
   }
 
   function cambiarSaque() {
-    if (estado.finalizado) return;
     guardar();
     flipSaque();
     render();
@@ -685,8 +656,6 @@
     estado.saque = 'izq';
     estado.tiebreak = false;
     estado.setsHist = [];
-    estado.finalizado = false;
-    estado.ganador = null;
     estado.historial = [];
     render();
   }
@@ -748,36 +717,24 @@
   function abrirResultados() { pintarResultados(); $('modalResultados').classList.add('abierto'); }
   function cerrarResultados() { $('modalResultados').classList.remove('abierto'); }
 
-  // --- Ajustes ---
-  function pintarAjustes() {
-    $('cfgPuntoOro').checked = config.puntoOro;
-    $('cfgSets').querySelectorAll('button').forEach(b => {
-      b.classList.toggle('sel', Number(b.dataset.sets) === config.setsParaGanar);
-    });
-  }
-  function abrirAjustes() { pintarAjustes(); $('modalAjustes').classList.add('abierto'); }
-  function cerrarAjustes() { $('modalAjustes').classList.remove('abierto'); }
-
-  function cambiarConfig(fn) {
-    if (hayProgreso() && !confirm('Cambiar este ajuste reinicia el partido en curso. ¿Continuar?')) {
-      pintarAjustes();
-      return;
-    }
-    fn();
-    guardarConfig();
-    pintarAjustes();
-    reiniciar();
-  }
-
   // --- Eventos ---
   function tocarPanel(lado) {
     return e => {
       if (e.target.closest('.nombre-wrap')) return;
+      if (e.target.closest('.set-aj')) return;
       ganarPunto(lado);
     };
   }
   $('eqIzq').addEventListener('click', tocarPanel('izq'));
   $('eqDer').addEventListener('click', tocarPanel('der'));
+
+  // Botones +/− de sets (delegado: se recrean en cada render).
+  document.querySelector('.marcador').addEventListener('click', e => {
+    const b = e.target.closest('.set-aj');
+    if (!b) return;
+    e.stopPropagation();
+    ajustarSet(b.dataset.lado, Number(b.dataset.delta));
+  });
 
   document.querySelectorAll('.edit-nombre').forEach(b => {
     b.addEventListener('click', e => {
@@ -811,21 +768,11 @@
     if (e.target === $('modalResultados')) cerrarResultados();
   });
 
-  $('btnAjustes').addEventListener('click', abrirAjustes);
-  $('btnCerrarAjustes').addEventListener('click', cerrarAjustes);
-  $('modalAjustes').addEventListener('click', e => {
-    if (e.target === $('modalAjustes')) cerrarAjustes();
-  });
+  // Toggle visible Ventaja ⟷ Punto de oro (se aplica al instante, sin reiniciar).
   $('cfgPuntoOro').addEventListener('change', e => {
-    const v = e.target.checked;
-    cambiarConfig(() => { config.puntoOro = v; });
-  });
-  $('cfgSets').querySelectorAll('button').forEach(b => {
-    b.addEventListener('click', () => {
-      const v = Number(b.dataset.sets);
-      if (v === config.setsParaGanar) return;
-      cambiarConfig(() => { config.setsParaGanar = v; });
-    });
+    config.puntoOro = e.target.checked;
+    guardarConfig();
+    render();
   });
 
   // --- Arranque ---

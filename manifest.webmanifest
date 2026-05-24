@@ -1,7 +1,7 @@
 {
-  "name": "Marcador Pádel",
-  "short_name": "Pádel",
-  "description": "Marcador simple para partidos de pádel",
+  "name": "Padel Scoreboard",
+  "short_name": "Padel",
+  "description": "Simple scoreboard for padel matches",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

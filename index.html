@@ -176,14 +176,20 @@
 
   .meta {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 1.4vw;
+    gap: .4vh;
     font-size: 2vh;
     font-weight: 700;
     letter-spacing: .04em;
     color: rgba(255,255,255,.85);
     text-transform: uppercase;
     margin-bottom: .4vh;
+  }
+  .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 1.6vw;
   }
   .meta .n { font-size: 2.6vh; }
   .set-aj {
@@ -575,10 +581,12 @@
       pts.textContent = d.txt;
       pts.classList.toggle('ad', d.ad);
       $('meta' + cap(lado)).innerHTML =
-        `<button class="set-aj" data-lado="${lado}" data-delta="-1">−</button>` +
-        `<span class="n">${estado[lado].s}</span> sets` +
-        `<button class="set-aj" data-lado="${lado}" data-delta="1">+</button>` +
-        ` · <span class="n">${estado[lado].j}</span> juegos`;
+        `<div class="meta-row">` +
+          `<button class="set-aj" data-lado="${lado}" data-delta="-1">−</button>` +
+          `<span class="n">${estado[lado].s}</span> sets` +
+          `<button class="set-aj" data-lado="${lado}" data-delta="1">+</button>` +
+        `</div>` +
+        `<div class="meta-row"><span class="n">${estado[lado].j}</span> juegos</div>`;
       $('eq' + cap(lado)).classList.toggle('activo', estado.saque === lado);
     });
     $('cfgPuntoOro').checked = config.puntoOro;

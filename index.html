@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Pádel">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Marcador Pádel</title>
+<meta name="description" content="Marcador para partidos de pádel: dos paneles táctiles, puntuación 0/15/30/40, juegos y sets, tie-break, punto de oro opcional, indicador de saque, deshacer y reinicio." />
+<link rel="canonical" href="https://padel.closer.click/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Closer Click" />
+<meta property="og:title" content="Contador Pádel" />
+<meta property="og:description" content="Marcador táctil para partidos de pádel: puntos, juegos, sets y tie-break." />
+<meta property="og:url" content="https://padel.closer.click/" />
+<meta property="og:image" content="https://padel.closer.click/og.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Contador Pádel" />
+<meta name="twitter:description" content="Marcador táctil para partidos de pádel: puntos, juegos, sets y tie-break." />
+<meta name="twitter:image" content="https://padel.closer.click/og.jpg" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    background: #111827;
+  }
+
+  /* --- Barra superior --- */
+  .topbar {
+    display: flex;
+    background: #111827;
+    border-bottom: 2px solid #1f2937;
+  }
+  .topbar button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 1.9vh;
+    font-weight: 700;
+    padding: 1.4vh 0;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    cursor: pointer;
+  }
+  .topbar button:active { background: #1f2937; }
+
+  /* --- Marcador --- */
+  .marcador {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+  .equipo {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    transition: background-color .2s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .equipo.izq { background: #1d4ed8; }
+  .equipo.der { background: #b91c1c; }
+
+  /* equipo sin saque: levemente atenuado */
+  .equipo:not(.activo) {
+    filter: brightness(.6) saturate(.8);
+  }
+
+  .nombre-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5vw;
+    width: 100%;
+    padding: 0 2vw;
+    margin-bottom: .6vh;
+  }
+  .nombre {
+    font-size: 4.2vw;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed transparent;
+    color: #fff;
+    text-align: center;
+    flex: 1 1 0;
+    min-width: 0;
+    width: 100%;
+  }
+  .nombre:focus {
+    outline: none;
+    border-bottom-color: rgba(255,255,255,.6);
+  }
+  .edit-nombre {
+    width: 7vw;
+    height: 7vw;
+    max-width: 32px;
+    max-height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.5);
+    background: rgba(255,255,255,.12);
+    color: #fff;
+    font-size: 3.5vw;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .edit-nombre:active { background: rgba(255,255,255,.3); }
+
+  .meta {
+    font-size: 2vh;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: rgba(255,255,255,.85);
+    text-transform: uppercase;
+    margin-bottom: .4vh;
+  }
+  .meta .n { font-size: 2.6vh; }
+
+  .puntos {
+    font-size: 24vw;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .puntos.ad { color: #fde047; }
+
+  .saque {
+    margin-top: 1vh;
+    height: 3.2vh;
+    font-size: 2.6vh;
+    font-weight: 700;
+    letter-spacing: .12em;
+  }
+  .equipo.activo .saque::after { content: "● SAQUE"; }
+
+  .tiebadge {
+    position: absolute;
+    top: 1.2vh;
+    background: #fde047;
+    color: #111827;
+    font-size: 1.7vh;
+    font-weight: 800;
+    letter-spacing: .12em;
+    padding: .4vh 2vw;
+    border-radius: 999px;
+    display: none;
+  }
+  body.tiebreak .tiebadge { display: block; }
+
+  .ganador {
+    position: absolute;
+    top: 1.2vh;
+    font-size: 2.4vh;
+    font-weight: 800;
+    color: #fde047;
+  }
+
+  .toque {
+    position: absolute;
+    font-size: 12vh;
+    font-weight: 800;
+    opacity: 0;
+    pointer-events: none;
+  }
+  @keyframes pop {
+    0%   { opacity: .9; transform: scale(.4); }
+    100% { opacity: 0;  transform: scale(1.6); }
+  }
+  .toque.anim { animation: pop .5s ease-out; }
+
+  /* --- Barra de control --- */
+  .control {
+    display: flex;
+    background: #111827;
+    border-top: 2px solid #1f2937;
+  }
+  .control button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 1.9vh;
+    font-weight: 700;
+    padding: 1.6vh 0;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    cursor: pointer;
+  }
+  .control button:active { background: #1f2937; }
+  .btn-saque {
+    background: #f59e0b !important;
+    color: #111827 !important;
+    font-size: 2.2vh !important;
+  }
+  .btn-saque:active { background: #d97706 !important; }
+
+  /* --- Modales --- */
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.75);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    padding: 4vh 4vw;
+  }
+  .modal.abierto { display: flex; }
+  .modal-caja {
+    background: #1f2937;
+    color: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2vh 4vw;
+    border-bottom: 1px solid #374151;
+  }
+  .modal-head h2 {
+    font-size: 2.4vh;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .modal-cerrar {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 3vh;
+    cursor: pointer;
+    padding: 0 1vw;
+  }
+  .modal-body {
+    overflow-y: auto;
+    padding: 1vh 0;
+  }
+  .resultado {
+    display: flex;
+    align-items: center;
+    gap: 2vw;
+    padding: 1.5vh 4vw;
+    border-bottom: 1px solid #374151;
+  }
+  .resultado:last-child { border-bottom: none; }
+  .resultado-info { flex: 1; min-width: 0; }
+  .resultado-fecha {
+    font-size: 1.5vh;
+    color: #9ca3af;
+    margin-bottom: .4vh;
+  }
+  .resultado-marcador {
+    font-size: 2.1vh;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .resultado-marcador .gana { color: #fde047; }
+  .resultado-sets {
+    font-size: 1.7vh;
+    color: #cbd5e1;
+    margin-top: .4vh;
+    font-variant-numeric: tabular-nums;
+  }
+  .borrar {
+    background: #b91c1c;
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    padding: 1vh 3vw;
+    font-size: 1.8vh;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .borrar:active { background: #7f1d1d; }
+  .vacio {
+    padding: 4vh 4vw;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 2vh;
+  }
+
+  /* --- Ajustes --- */
+  .ajuste {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3vw;
+    padding: 2vh 4vw;
+    border-bottom: 1px solid #374151;
+  }
+  .ajuste-label { font-size: 2vh; font-weight: 700; }
+  .ajuste-desc { font-size: 1.5vh; color: #9ca3af; margin-top: .3vh; }
+  .seg {
+    display: flex;
+    border: 1px solid #4b5563;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .seg button {
+    border: none;
+    background: #111827;
+    color: #cbd5e1;
+    font-size: 1.9vh;
+    font-weight: 700;
+    padding: 1vh 3.2vw;
+    cursor: pointer;
+  }
+  .seg button.sel { background: #2563eb; color: #fff; }
+  .switch {
+    position: relative;
+    width: 52px;
+    height: 30px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .switch input { display: none; }
+  .switch .pista {
+    position: absolute;
+    inset: 0;
+    background: #4b5563;
+    border-radius: 999px;
+    transition: background .2s;
+  }
+  .switch .bolita {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 24px; height: 24px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .2s;
+  }
+  .switch input:checked + .pista { background: #2563eb; }
+  .switch input:checked + .pista + .bolita { transform: translateX(22px); }
+</style>
+<!-- Analítica cookieless autohosteada (GoatCounter); no cuenta en localhost/LAN. -->
+<script>window.goatcounter={path:function(p){return location.hostname+p}}</script>
+<script data-goatcounter="https://goat.closer.click/count" async src="https://goat.closer.click/count.js"></script>
+</head>
+<body>
+
+  <div class="topbar">
+    <button id="btnResultados">📋 Resultados</button>
+    <button id="btnAjustes">⚙ Ajustes</button>
+    <button id="btnInstalar" style="display:none">⬇ Instalar</button>
+  </div>
+
+  <div class="marcador">
+    <div class="equipo izq activo" id="eqIzq">
+      <div class="nombre-wrap">
+        <input class="nombre" id="nomIzq" value="Equipo A" maxlength="14" readonly>
+        <button class="edit-nombre" data-target="nomIzq" title="Editar nombre">✎</button>
+      </div>
+      <div class="meta" id="metaIzq"></div>
+      <div class="puntos" id="ptsIzq">0</div>
+      <div class="saque"></div>
+      <div class="tiebadge">TIE-BREAK</div>
+      <div class="ganador" id="ganaIzq"></div>
+      <div class="toque" id="toqueIzq">+1</div>
+    </div>
+    <div class="equipo der" id="eqDer">
+      <div class="nombre-wrap">
+        <input class="nombre" id="nomDer" value="Equipo B" maxlength="14" readonly>
+        <button class="edit-nombre" data-target="nomDer" title="Editar nombre">✎</button>
+      </div>
+      <div class="meta" id="metaDer"></div>
+      <div class="puntos" id="ptsDer">0</div>
+      <div class="saque"></div>
+      <div class="tiebadge">TIE-BREAK</div>
+      <div class="ganador" id="ganaDer"></div>
+      <div class="toque" id="toqueDer">+1</div>
+    </div>
+  </div>
+
+  <div class="control">
+    <button id="btnDeshacer">↶ Deshacer</button>
+    <button class="btn-saque" id="btnSaque">⇄ Saque</button>
+    <button id="btnNuevo">+ Nuevo</button>
+  </div>
+
+  <div class="modal" id="modalResultados">
+    <div class="modal-caja">
+      <div class="modal-head">
+        <h2>Resultados</h2>
+        <button class="modal-cerrar" id="btnCerrarModal">✕</button>
+      </div>
+      <div class="modal-body" id="listaResultados"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalAjustes">
+    <div class="modal-caja">
+      <div class="modal-head">
+        <h2>Ajustes</h2>
+        <button class="modal-cerrar" id="btnCerrarAjustes">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="ajuste">
+          <div>
+            <div class="ajuste-label">Punto de oro</div>
+            <div class="ajuste-desc">En 40-40 el siguiente punto define el juego (sin ventaja).</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="cfgPuntoOro">
+            <span class="pista"></span><span class="bolita"></span>
+          </label>
+        </div>
+        <div class="ajuste">
+          <div>
+            <div class="ajuste-label">Partido</div>
+            <div class="ajuste-desc">Sets necesarios para ganar.</div>
+          </div>
+          <div class="seg" id="cfgSets">
+            <button data-sets="1">Mejor de 1</button>
+            <button data-sets="2">Mejor de 3</button>
+            <button data-sets="3">Mejor de 5</button>
+          </div>
+        </div>
+        <div class="vacio" style="font-size:1.6vh">Cambiar un ajuste reinicia el partido en curso.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const STORAGE_KEY = 'padel_resultados';
+  const ACTUAL_KEY  = 'padel_actual';
+  const CONFIG_KEY  = 'padel_config';
+
+  // Configuración del partido.
+  const config = { puntoOro: false, setsParaGanar: 2 };
+
+  // Estado del partido. p = puntos del juego actual (0..40 / ventaja, o nº en tie-break),
+  // j = juegos del set actual, s = sets ganados.
+  const estado = {
+    izq: { p: 0, j: 0, s: 0 },
+    der: { p: 0, j: 0, s: 0 },
+    saque: 'izq',
+    tiebreak: false,
+    setsHist: [],     // sets cerrados: [{ izq, der }] (juegos)
+    finalizado: false,
+    ganador: null,
+    historial: []     // instantáneas para deshacer
+  };
+
+  const otro = l => l === 'izq' ? 'der' : 'izq';
+  const flipSaque = () => { estado.saque = otro(estado.saque); };
+
+  // --- Persistencia ---
+  function leerConfig() {
+    try {
+      const c = JSON.parse(localStorage.getItem(CONFIG_KEY));
+      if (c) {
+        config.puntoOro = !!c.puntoOro;
+        config.setsParaGanar = c.setsParaGanar || 2;
+      }
+    } catch {}
+  }
+  function guardarConfig() {
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+  }
+
+  function snapshot() {
+    return {
+      izq: { ...estado.izq },
+      der: { ...estado.der },
+      saque: estado.saque,
+      tiebreak: estado.tiebreak,
+      setsHist: estado.setsHist.map(s => ({ ...s })),
+      finalizado: estado.finalizado,
+      ganador: estado.ganador
+    };
+  }
+  function aplicar(s) {
+    estado.izq = { ...s.izq };
+    estado.der = { ...s.der };
+    estado.saque = s.saque;
+    estado.tiebreak = s.tiebreak;
+    estado.setsHist = s.setsHist.map(x => ({ ...x }));
+    estado.finalizado = s.finalizado;
+    estado.ganador = s.ganador;
+  }
+  function guardar() { estado.historial.push(snapshot()); }
+
+  function guardarActual() {
+    localStorage.setItem(ACTUAL_KEY, JSON.stringify({
+      ...snapshot(),
+      historial: estado.historial,
+      nomIzq: $('nomIzq').value,
+      nomDer: $('nomDer').value
+    }));
+  }
+  function cargarActual() {
+    try {
+      const d = JSON.parse(localStorage.getItem(ACTUAL_KEY));
+      if (!d) return;
+      aplicar(d);
+      estado.historial = Array.isArray(d.historial) ? d.historial : [];
+      if (d.nomIzq) $('nomIzq').value = d.nomIzq;
+      if (d.nomDer) $('nomDer').value = d.nomDer;
+    } catch {}
+  }
+
+  // --- Lógica de puntuación ---
+  function ganarPunto(lado) {
+    if (estado.finalizado) return;
+    guardar();
+    const o = otro(lado);
+    const A = estado[lado], B = estado[o];
+
+    if (estado.tiebreak) {
+      A.p++;
+      // El saque pasa tras el 1er punto y luego cada 2 puntos.
+      if ((estado.izq.p + estado.der.p) % 2 === 1) flipSaque();
+      if (A.p >= 7 && A.p - B.p >= 2) cerrarSet(lado, true);
+    } else {
+      A.p++;
+      const need = config.puntoOro ? 1 : 2;
+      if (A.p >= 4 && A.p - B.p >= need) ganarJuego(lado);
+    }
+    animarToque(lado);
+    render();
+  }
+
+  function ganarJuego(lado) {
+    const o = otro(lado);
+    estado[lado].j++;
+    estado.izq.p = 0; estado.der.p = 0;
+    flipSaque(); // el saque cambia de pareja en cada juego
+    if (estado[lado].j >= 6 && estado[lado].j - estado[o].j >= 2) {
+      cerrarSet(lado, false);
+    } else if (estado.izq.j === 6 && estado.der.j === 6) {
+      estado.tiebreak = true;
+    }
+  }
+
+  function cerrarSet(lado, viaTie) {
+    const o = otro(lado);
+    if (viaTie) { estado[lado].j = 7; estado[o].j = 6; }
+    estado.setsHist.push({ izq: estado.izq.j, der: estado.der.j });
+    estado[lado].s++;
+    estado.izq.j = 0; estado.der.j = 0;
+    estado.izq.p = 0; estado.der.p = 0;
+    estado.tiebreak = false;
+    if (estado[lado].s >= config.setsParaGanar) {
+      estado.finalizado = true;
+      estado.ganador = lado;
+    }
+  }
+
+  function dispPunto(lado) {
+    const o = otro(lado);
+    const a = estado[lado].p, b = estado[o].p;
+    if (estado.tiebreak) return { txt: String(a), ad: false };
+    if (a >= 3 && b >= 3) {
+      if (a === b) return { txt: '40', ad: false };
+      return a > b ? { txt: 'AD', ad: true } : { txt: '40', ad: false };
+    }
+    return { txt: ['0', '15', '30', '40'][a], ad: false };
+  }
+
+  // --- Render ---
+  function render() {
+    document.body.classList.toggle('tiebreak', estado.tiebreak);
+    ['izq', 'der'].forEach(lado => {
+      const d = dispPunto(lado);
+      const pts = $('pts' + cap(lado));
+      pts.textContent = estado.finalizado ? '–' : d.txt;
+      pts.classList.toggle('ad', d.ad);
+      $('meta' + cap(lado)).innerHTML =
+        `<span class="n">${estado[lado].s}</span> sets · <span class="n">${estado[lado].j}</span> juegos`;
+      $('eq' + cap(lado)).classList.toggle('activo', !estado.finalizado && estado.saque === lado);
+      $('gana' + cap(lado)).textContent =
+        (estado.finalizado && estado.ganador === lado) ? '🏆 GANADOR' : '';
+    });
+    guardarActual();
+  }
+
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+  function animarToque(lado) {
+    const el = $('toque' + cap(lado));
+    el.classList.remove('anim');
+    void el.offsetWidth;
+    el.classList.add('anim');
+  }
+
+  function deshacer() {
+    const prev = estado.historial.pop();
+    if (!prev) return;
+    aplicar(prev);
+    render();
+  }
+
+  function cambiarSaque() {
+    if (estado.finalizado) return;
+    guardar();
+    flipSaque();
+    render();
+  }
+
+  // --- Resultados guardados ---
+  function leerResultados() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch { return []; }
+  }
+  function escribirResultados(arr) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+  }
+
+  function setsActuales() {
+    const sets = estado.setsHist.map(s => ({ ...s }));
+    if (estado.izq.j > 0 || estado.der.j > 0 || estado.izq.p > 0 || estado.der.p > 0) {
+      sets.push({ izq: estado.izq.j, der: estado.der.j });
+    }
+    return sets;
+  }
+
+  function hayProgreso() {
+    return estado.izq.s > 0 || estado.der.s > 0 ||
+           estado.izq.j > 0 || estado.der.j > 0 ||
+           estado.izq.p > 0 || estado.der.p > 0 ||
+           estado.setsHist.length > 0;
+  }
+
+  function nuevoPartido() {
+    if (hayProgreso()) {
+      if (!confirm('¿Iniciar un nuevo partido? Se guardará el marcador actual.')) return;
+      const sets = setsActuales();
+      let sIzq = 0, sDer = 0;
+      sets.forEach(s => { if (s.izq > s.der) sIzq++; else if (s.der > s.izq) sDer++; });
+      const resultados = leerResultados();
+      resultados.unshift({
+        fecha: Date.now(),
+        nomIzq: $('nomIzq').value || 'Equipo A',
+        nomDer: $('nomDer').value || 'Equipo B',
+        sets, setsIzq: sIzq, setsDer: sDer
+      });
+      escribirResultados(resultados);
+    }
+    reiniciar();
+  }
+
+  function reiniciar() {
+    estado.izq = { p: 0, j: 0, s: 0 };
+    estado.der = { p: 0, j: 0, s: 0 };
+    estado.saque = 'izq';
+    estado.tiebreak = false;
+    estado.setsHist = [];
+    estado.finalizado = false;
+    estado.ganador = null;
+    estado.historial = [];
+    render();
+  }
+
+  function formatearFecha(ts) {
+    const d = new Date(ts);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    return `${dd}/${mm} ${hh}:${mi}`;
+  }
+
+  function pintarResultados() {
+    const cont = $('listaResultados');
+    const resultados = leerResultados();
+    if (resultados.length === 0) {
+      cont.innerHTML = '<div class="vacio">No hay resultados guardados.</div>';
+      return;
+    }
+    cont.innerHTML = '';
+    resultados.forEach((r, i) => {
+      const izqGana = r.setsIzq > r.setsDer;
+      const derGana = r.setsDer > r.setsIzq;
+      const setsTxt = (r.sets || []).map(s => `${s.izq}-${s.der}`).join('  ');
+      const fila = document.createElement('div');
+      fila.className = 'resultado';
+      fila.innerHTML = `
+        <div class="resultado-info">
+          <div class="resultado-fecha">${formatearFecha(r.fecha)}</div>
+          <div class="resultado-marcador">
+            <span class="${izqGana ? 'gana' : ''}">${izqGana ? '🏆 ' : ''}${escapar(r.nomIzq)} ${r.setsIzq}</span>
+            —
+            <span class="${derGana ? 'gana' : ''}">${r.setsDer} ${escapar(r.nomDer)}${derGana ? ' 🏆' : ''}</span>
+          </div>
+          <div class="resultado-sets">${setsTxt}</div>
+        </div>
+        <button class="borrar" data-idx="${i}">Borrar</button>
+      `;
+      cont.appendChild(fila);
+    });
+    cont.querySelectorAll('.borrar').forEach(b => {
+      b.addEventListener('click', () => {
+        const idx = Number(b.dataset.idx);
+        const arr = leerResultados();
+        arr.splice(idx, 1);
+        escribirResultados(arr);
+        pintarResultados();
+      });
+    });
+  }
+
+  function escapar(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  function abrirResultados() { pintarResultados(); $('modalResultados').classList.add('abierto'); }
+  function cerrarResultados() { $('modalResultados').classList.remove('abierto'); }
+
+  // --- Ajustes ---
+  function pintarAjustes() {
+    $('cfgPuntoOro').checked = config.puntoOro;
+    $('cfgSets').querySelectorAll('button').forEach(b => {
+      b.classList.toggle('sel', Number(b.dataset.sets) === config.setsParaGanar);
+    });
+  }
+  function abrirAjustes() { pintarAjustes(); $('modalAjustes').classList.add('abierto'); }
+  function cerrarAjustes() { $('modalAjustes').classList.remove('abierto'); }
+
+  function cambiarConfig(fn) {
+    if (hayProgreso() && !confirm('Cambiar este ajuste reinicia el partido en curso. ¿Continuar?')) {
+      pintarAjustes();
+      return;
+    }
+    fn();
+    guardarConfig();
+    pintarAjustes();
+    reiniciar();
+  }
+
+  // --- Eventos ---
+  function tocarPanel(lado) {
+    return e => {
+      if (e.target.closest('.nombre-wrap')) return;
+      ganarPunto(lado);
+    };
+  }
+  $('eqIzq').addEventListener('click', tocarPanel('izq'));
+  $('eqDer').addEventListener('click', tocarPanel('der'));
+
+  document.querySelectorAll('.edit-nombre').forEach(b => {
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      const input = $(b.dataset.target);
+      input.readOnly = false;
+      input.focus();
+      input.select();
+    });
+  });
+  document.querySelectorAll('.nombre').forEach(inp => {
+    inp.addEventListener('click', e => {
+      e.stopPropagation();
+      if (!inp.readOnly) return;
+      inp.readOnly = false;
+      inp.focus();
+      inp.select();
+    });
+    inp.addEventListener('blur', () => { inp.readOnly = true; guardarActual(); });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+    });
+  });
+
+  $('btnSaque').addEventListener('click', cambiarSaque);
+  $('btnDeshacer').addEventListener('click', deshacer);
+  $('btnNuevo').addEventListener('click', nuevoPartido);
+  $('btnResultados').addEventListener('click', abrirResultados);
+  $('btnCerrarModal').addEventListener('click', cerrarResultados);
+  $('modalResultados').addEventListener('click', e => {
+    if (e.target === $('modalResultados')) cerrarResultados();
+  });
+
+  $('btnAjustes').addEventListener('click', abrirAjustes);
+  $('btnCerrarAjustes').addEventListener('click', cerrarAjustes);
+  $('modalAjustes').addEventListener('click', e => {
+    if (e.target === $('modalAjustes')) cerrarAjustes();
+  });
+  $('cfgPuntoOro').addEventListener('change', e => {
+    const v = e.target.checked;
+    cambiarConfig(() => { config.puntoOro = v; });
+  });
+  $('cfgSets').querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', () => {
+      const v = Number(b.dataset.sets);
+      if (v === config.setsParaGanar) return;
+      cambiarConfig(() => { config.setsParaGanar = v; });
+    });
+  });
+
+  // --- Arranque ---
+  leerConfig();
+  cargarActual();
+  render();
+
+  // --- PWA: service worker + botón Instalar ---
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+
+  let deferredPrompt = null;
+  const btnInstalar = $('btnInstalar');
+  const yaInstalada = () =>
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+
+  if (!yaInstalada()) {
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferredPrompt = e;
+      btnInstalar.style.display = '';
+    });
+  }
+  btnInstalar.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    btnInstalar.style.display = 'none';
+  });
+  window.addEventListener('appinstalled', () => {
+    btnInstalar.style.display = 'none';
+    deferredPrompt = null;
+  });
+</script>
+</body>
+</html>

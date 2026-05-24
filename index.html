@@ -59,17 +59,22 @@
     cursor: pointer;
   }
   .topbar button:active { background: #1f2937; }
+  .btn-burger {
+    flex: 0 0 auto !important;
+    width: 12vw;
+    max-width: 56px;
+    font-size: 2.6vh !important;
+  }
   .modo {
-    flex: 1.4;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 1.6vw;
+    gap: 2.5vw;
     color: #9ca3af;
-    font-size: 1.7vh;
+    font-size: 1.8vh;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .04em;
+    flex-shrink: 0;
   }
   .modo #lblOro { color: #fff; }
   .modo.ventaja #lblOro { color: #9ca3af; }
@@ -377,6 +382,22 @@
     color: #9ca3af;
     font-size: 2vh;
   }
+  .opcion {
+    padding: 2.5vh 4vw;
+  }
+  .opcion-label {
+    font-size: 2.1vh;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .opcion-desc {
+    font-size: 1.7vh;
+    color: #9ca3af;
+    margin-top: .6vh;
+    margin-bottom: 2vh;
+    line-height: 1.4;
+  }
 </style>
 <!-- Analítica cookieless autohosteada (GoatCounter); no cuenta en localhost/LAN. -->
 <script>window.goatcounter={path:function(p){return location.hostname+p}}</script>
@@ -386,15 +407,8 @@
 
   <div class="topbar">
     <button id="btnResultados">📋 Resultados</button>
-    <div class="modo" id="modo">
-      <span id="lblVentaja">Ventaja</span>
-      <label class="switch">
-        <input type="checkbox" id="cfgPuntoOro">
-        <span class="pista"></span><span class="bolita"></span>
-      </label>
-      <span id="lblOro">Punto de oro</span>
-    </div>
     <button id="btnInstalar" style="display:none">⬇ Instalar</button>
+    <button id="btnOpciones" class="btn-burger" title="Opciones">☰</button>
   </div>
 
   <div class="marcador">
@@ -435,6 +449,31 @@
         <button class="modal-cerrar" id="btnCerrarModal">✕</button>
       </div>
       <div class="modal-body" id="listaResultados"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalOpciones">
+    <div class="modal-caja">
+      <div class="modal-head">
+        <h2>Opciones</h2>
+        <button class="modal-cerrar" id="btnCerrarOpciones">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="opcion">
+          <div class="opcion-info">
+            <div class="opcion-label">Modo de puntuación</div>
+            <div class="opcion-desc">Con <b>punto de oro</b>, en 40-40 el siguiente punto define el juego. Con <b>ventaja</b>, hay que sacar dos puntos de diferencia.</div>
+          </div>
+          <div class="modo" id="modo">
+            <span id="lblVentaja">Ventaja</span>
+            <label class="switch">
+              <input type="checkbox" id="cfgPuntoOro">
+              <span class="pista"></span><span class="bolita"></span>
+            </label>
+            <span id="lblOro">Punto de oro</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -776,7 +815,16 @@
     if (e.target === $('modalResultados')) cerrarResultados();
   });
 
-  // Toggle visible Ventaja ⟷ Punto de oro (se aplica al instante, sin reiniciar).
+  // Panel de opciones (burger).
+  const abrirOpciones = () => $('modalOpciones').classList.add('abierto');
+  const cerrarOpciones = () => $('modalOpciones').classList.remove('abierto');
+  $('btnOpciones').addEventListener('click', abrirOpciones);
+  $('btnCerrarOpciones').addEventListener('click', cerrarOpciones);
+  $('modalOpciones').addEventListener('click', e => {
+    if (e.target === $('modalOpciones')) cerrarOpciones();
+  });
+
+  // Toggle Ventaja ⟷ Punto de oro (se aplica al instante, sin reiniciar).
   $('cfgPuntoOro').addEventListener('change', e => {
     config.puntoOro = e.target.checked;
     guardarConfig();

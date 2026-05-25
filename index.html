@@ -60,6 +60,7 @@
     cursor: pointer;
   }
   .topbar button:active { background: #1f2937; }
+  .topbar-coin { flex: 0 0 auto; display: flex; align-items: center; padding: 0 12px; }
   .btn-burger {
     flex: 0 0 auto !important;
     width: 12vw;
@@ -423,11 +424,11 @@
     </script>
 </head>
 <body>
-  <closer-click-support floating href="https://ko-fi.com/seyacat"></closer-click-support>
 
   <div class="topbar">
     <button id="btnResultados">📋 Results</button>
     <button id="btnInstalar" style="display:none">⬇ Install</button>
+    <closer-click-support class="topbar-coin" href="https://ko-fi.com/seyacat"></closer-click-support>
     <button id="btnOpciones" class="btn-burger" title="Options">☰</button>
   </div>
 

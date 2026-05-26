@@ -130,11 +130,6 @@
   .equipo.izq { background: #15803d; }
   .equipo.der { background: #7c3aed; }
 
-  /* equipo sin saque: levemente atenuado */
-  .equipo:not(.activo) {
-    filter: brightness(.85) saturate(.92);
-  }
-
   .nombre-wrap {
     display: flex;
     align-items: center;
@@ -241,7 +236,6 @@
     font-weight: 700;
     letter-spacing: .12em;
   }
-  .equipo.activo .saque::after { content: "● SERVE"; }
 
   .tiebadge {
     position: absolute;
@@ -441,7 +435,7 @@
       </div>
       <div class="meta" id="metaIzq"></div>
       <div class="puntos" id="ptsIzq">0</div>
-      <div class="saque"></div>
+      <div class="saque" id="sqIzq"></div>
       <div class="tiebadge">TIE-BREAK</div>
       <div class="toque" id="toqueIzq">+1</div>
     </div>
@@ -452,7 +446,7 @@
       </div>
       <div class="meta" id="metaDer"></div>
       <div class="puntos" id="ptsDer">0</div>
-      <div class="saque"></div>
+      <div class="saque" id="sqDer"></div>
       <div class="tiebadge">TIE-BREAK</div>
       <div class="toque" id="toqueDer">+1</div>
     </div>
@@ -653,7 +647,16 @@
           `<span class="n">${estado[lado].j}</span><span class="lbl">games</span>` +
           `<button class="aj" data-lado="${lado}" data-tipo="j" data-delta="1">+</button>` +
         `</div>`;
-      $('eq' + cap(lado)).classList.toggle('activo', estado.saque === lado);
+      const activo = estado.saque === lado;
+      $('eq' + cap(lado)).classList.toggle('activo', activo);
+      // Lado de saque: cicla R, R, L, L según los puntos jugados en el juego.
+      const sq = $('sq' + cap(lado));
+      if (activo) {
+        const ladoSaque = ((estado.izq.p + estado.der.p) % 4) < 2 ? 'R' : 'L';
+        sq.textContent = '● SERVE ' + ladoSaque;
+      } else {
+        sq.textContent = '';
+      }
     });
     $('cfgPuntoOro').checked = config.puntoOro;
     $('modo').classList.toggle('ventaja', !config.puntoOro);

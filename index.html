@@ -422,6 +422,20 @@
     margin-bottom: 2vh;
     line-height: 1.4;
   }
+
+  /* Solo en web (pantalla ancha + puntero fino): sets y games más grandes,
+     y los botones +/- más pequeños. No afecta a móvil/táctil. */
+  @media (min-width: 820px) and (pointer: fine) {
+    .meta { font-size: 3vh; gap: .8vh; }
+    .meta .n { font-size: 5.2vh; }
+    .meta-row { gap: 1vw; }
+    .aj {
+      width: 22px;
+      height: 22px;
+      font-size: 16px;
+      border-width: 1px;
+    }
+  }
 </style>
 <!-- Analítica cookieless autohosteada (GoatCounter); no cuenta en localhost/LAN. -->
 <script>window.goatcounter={path:function(p){return location.hostname+p}}</script>

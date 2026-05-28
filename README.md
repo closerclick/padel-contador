@@ -1,6 +1,6 @@
 # Contador Pádel
 
-Marcador para partidos de pádel: dos paneles táctiles con puntuación de tenis (0/15/30/40, juegos y sets), indicador de saque, tie-break, punto de oro opcional, deshacer y reinicio. Parte del ecosistema [Closer Click](https://seyacat.github.io/closerclick/).
+Marcador para partidos de pádel: dos paneles táctiles con puntuación de tenis (0/15/30/40, juegos y sets), indicador de saque, tie-break, punto de oro opcional, deshacer y reinicio. Parte del ecosistema [Closer Click](https://closerclick.github.io/closerclick/).
 
 ## Filosofía
 

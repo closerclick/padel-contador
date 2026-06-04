@@ -457,6 +457,7 @@
 <body>
 
   <div class="topbar">
+    <closer-click-back style="color:#e2e8f0;--cc-back-size:36px;margin:0 2px"></closer-click-back>
     <button id="btnResultados" data-i18n="results">📋 Results</button>
     <button id="btnInstalar" data-i18n="install" style="display:none">⬇ Install</button>
     <closer-click-support class="topbar-coin" href="https://ko-fi.com/closerclick" repo="closerclick/padel-contador" discord="https://discord.gg/D648uq7cth"></closer-click-support>
@@ -1039,5 +1040,24 @@
   });
 </script>
   <script type="module" src="https://cdn.jsdelivr.net/npm/@closerclick/closer-click-support@0.3/src/index.js"></script>
+  <!-- Navegación "volver" unificada del ecosistema: chevron del header + botón
+       físico de Android / gesto de iOS / atrás del navegador → cierra los modales
+       (resultados / opciones); si no hay nada → closer.click. -->
+  <script type="module">
+    import { createBackNav } from 'https://cdn.jsdelivr.net/npm/@closerclick/closer-click-nav@0.2/src/index.js'
+    const nav = createBackNav()
+    const bindModal = (id) => {
+      const el = document.getElementById(id); if (!el) return
+      let handle = null
+      const sync = () => {
+        const open = el.classList.contains('abierto')
+        if (open && !handle) handle = nav.open(() => el.classList.remove('abierto'))
+        else if (!open && handle) { const h = handle; handle = null; h.close() }
+      }
+      new MutationObserver(sync).observe(el, { attributes: true, attributeFilter: ['class'] })
+      sync()
+    }
+    ;['modalResultados', 'modalOpciones'].forEach(bindModal)
+  </script>
 </body>
 </html>

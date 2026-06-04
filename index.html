@@ -28,7 +28,9 @@
 <meta name="twitter:description" content="Touch scoreboard for padel matches: points, games, sets and tie-break." />
 <meta name="twitter:image" content="https://padel.closer.click/og.jpg" />
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  /* touch-action: manipulation → en iOS el doble-tap NO hace zoom (Safari ignora
+     user-scalable=no desde iOS 10); además quita el delay de 300ms al tocar. */
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   html, body {
     height: 100%;
     overflow: hidden;

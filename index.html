@@ -81,9 +81,34 @@
     letter-spacing: .04em;
     flex-shrink: 0;
   }
-  .modo #lblOro { color: #fff; }
-  .modo.ventaja #lblOro { color: #9ca3af; }
-  .modo.ventaja #lblVentaja { color: #fff; }
+  /* Selector de modo de puntuación: 3 opciones (ventaja / doble ventaja /
+     punto de oro). Reemplaza al antiguo toggle de 2 estados. */
+  .seg {
+    display: flex;
+    gap: 1.5vw;
+    flex-wrap: wrap;
+  }
+  .seg-btn {
+    flex: 1 1 auto;
+    white-space: nowrap;
+    padding: 1.3vh 2.5vw;
+    border: 1px solid #374151;
+    background: #1f2937;
+    color: #9ca3af;
+    border-radius: 10px;
+    font-size: 1.6vh;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .seg-btn:active { transform: scale(.97); }
+  .seg-btn.on {
+    background: #f59e0b;
+    color: #111827;
+    border-color: #f59e0b;
+  }
   #idioma #lblEN { color: #fff; }
   #idioma.es #lblEN { color: #9ca3af; }
   #idioma.es #lblES { color: #fff; }
@@ -518,15 +543,12 @@
         <div class="opcion">
           <div class="opcion-info">
             <div class="opcion-label" data-i18n="scoringMode">Scoring mode</div>
-            <div class="opcion-desc" data-i18n-html="scoringDesc">With <b>golden point</b>, at 40-40 the next point decides the game. With <b>advantage</b>, you must win by two points.</div>
+            <div class="opcion-desc" id="scoringDesc"></div>
           </div>
-          <div class="modo" id="modo">
-            <span id="lblVentaja" data-i18n="advantage">Advantage</span>
-            <label class="switch">
-              <input type="checkbox" id="cfgPuntoOro">
-              <span class="pista"></span><span class="bolita"></span>
-            </label>
-            <span id="lblOro" data-i18n="golden">Golden point</span>
+          <div class="seg" id="modo" role="group" aria-label="Scoring mode">
+            <button type="button" class="seg-btn" data-scoring="ventaja" data-i18n="advantage">Advantage</button>
+            <button type="button" class="seg-btn" data-scoring="doble" data-i18n="doubleAdv">Double advantage</button>
+            <button type="button" class="seg-btn" data-scoring="oro" data-i18n="golden">Golden point</button>
           </div>
         </div>
         <div class="opcion">
@@ -554,8 +576,10 @@
 
   // Configuración del partido. Por defecto: punto de oro. El partido no termina
   // solo: los sets se acumulan sin límite (lo cierra el botón Nuevo).
+  // scoring: 'ventaja' (clásica, ganar por 2) | 'doble' (doble ventaja / Star
+  // Point FIP: 2 ventajas y luego punto de oro) | 'oro' (punto de oro directo).
   const config = {
-    puntoOro: true,
+    scoring: 'oro',
     lang: (navigator.language || 'en').toLowerCase().startsWith('es') ? 'es' : 'en'
   };
 
@@ -565,8 +589,11 @@
       results: '📋 Results', install: '⬇ Install', optionsTitle: 'Options',
       editName: 'Edit name', undo: '↶ Undo', serveBtn: '⇄ Serve', newMatch: '+ New',
       resultsH: 'Results', optionsH: 'Options', scoringMode: 'Scoring mode',
-      scoringDesc: 'With <b>golden point</b>, at 40-40 the next point decides the game. With <b>advantage</b>, you must win by two points.',
-      advantage: 'Advantage', golden: 'Golden point', language: 'Language',
+      advantage: 'Advantage', doubleAdv: 'Double advantage', golden: 'Golden point',
+      desc_ventaja: 'You must win the game by two points — at 40-40 it stays deuce until someone leads by two.',
+      desc_doble: '<b>Star Point</b> (FIP 2026): at 40-40 you play an advantage; if it goes back to deuce, a second advantage; on a third deuce a <b>golden point</b> decides the game.',
+      desc_oro: 'At 40-40 the next point decides the game (sudden death).',
+      language: 'Language',
       serve: 'SERVE', confirmNew: 'Start a new match? The current score will be saved.',
       noResults: 'No saved results.', delete: 'Delete'
     },
@@ -574,8 +601,11 @@
       results: '📋 Resultados', install: '⬇ Instalar', optionsTitle: 'Opciones',
       editName: 'Editar nombre', undo: '↶ Deshacer', serveBtn: '⇄ Saque', newMatch: '+ Nuevo',
       resultsH: 'Resultados', optionsH: 'Opciones', scoringMode: 'Modo de puntuación',
-      scoringDesc: 'Con <b>punto de oro</b>, en 40-40 el siguiente punto define el game. Con <b>ventaja</b>, hay que ganar por dos puntos.',
-      advantage: 'Ventaja', golden: 'Punto de oro', language: 'Idioma',
+      advantage: 'Ventaja', doubleAdv: 'Doble ventaja', golden: 'Punto de oro',
+      desc_ventaja: 'Hay que ganar el juego por dos puntos: en 40-40 sigue en iguales hasta que alguien saca dos de diferencia.',
+      desc_doble: '<b>Star Point</b> (FIP 2026): en 40-40 se juega una ventaja; si vuelve a iguales, una segunda ventaja; a la tercera igualdad un <b>punto de oro</b> define el juego.',
+      desc_oro: 'En 40-40 el siguiente punto define el juego (muerte súbita).',
+      language: 'Idioma',
       serve: 'SAQUE', confirmNew: '¿Empezar un partido nuevo? El marcador actual se guardará.',
       noResults: 'No hay resultados guardados.', delete: 'Borrar'
     }
@@ -601,7 +631,8 @@
   function leerConfig() {
     try {
       const c = JSON.parse(localStorage.getItem(CONFIG_KEY));
-      if (c && typeof c.puntoOro === 'boolean') config.puntoOro = c.puntoOro;
+      if (c && ['ventaja', 'doble', 'oro'].includes(c.scoring)) config.scoring = c.scoring;
+      else if (c && typeof c.puntoOro === 'boolean') config.scoring = c.puntoOro ? 'oro' : 'ventaja';
       if (c && (c.lang === 'es' || c.lang === 'en')) config.lang = c.lang;
     } catch {}
   }
@@ -661,7 +692,14 @@
       if (A.p >= 7 && A.p - B.p >= 2) cerrarSet(lado, true);
     } else {
       A.p++;
-      const need = config.puntoOro ? 1 : 2;
+      // Puntos de diferencia para cerrar el juego según el modo:
+      //  · 'oro'    → 1: en 40-40 el siguiente punto define (muerte súbita).
+      //  · 'ventaja'→ 2: hay que ganar por dos (la igualdad se repite sin fin).
+      //  · 'doble'  → 2, pero a la 3ª igualdad (ambos en 5 = se gastaron las dos
+      //               ventajas) pasa a punto de oro = 1. Es el "Star Point" FIP.
+      let need = 2;
+      if (config.scoring === 'oro') need = 1;
+      else if (config.scoring === 'doble' && Math.min(A.p, B.p) >= 5) need = 1;
       if (A.p >= 4 && A.p - B.p >= need) ganarJuego(lado);
     }
     animarToque(lado);
@@ -742,8 +780,8 @@
     });
     // Cancha única, centrada sobre la red. Lado R/L alterna en cada punto.
     $('saque').innerHTML = canchaSaque(estado.saque, ladoSaque);
-    $('cfgPuntoOro').checked = config.puntoOro;
-    $('modo').classList.toggle('ventaja', !config.puntoOro);
+    document.querySelectorAll('#modo .seg-btn').forEach(b =>
+      b.classList.toggle('on', b.dataset.scoring === config.scoring));
     guardarActual();
   }
 
@@ -763,7 +801,13 @@
     });
     $('idioma').classList.toggle('es', config.lang === 'es');
     $('cfgIdioma').checked = config.lang === 'es';
+    actualizarDescModo();
     render();
+  }
+
+  // Descripción del modo de puntuación elegido (cambia con el modo y el idioma).
+  function actualizarDescModo() {
+    $('scoringDesc').innerHTML = t('desc_' + config.scoring);
   }
 
   // Mini cancha landscape (vista superior): red vertical en el centro, mitad
@@ -989,11 +1033,15 @@
     if (e.target === $('modalOpciones')) cerrarOpciones();
   });
 
-  // Toggle Ventaja ⟷ Punto de oro (se aplica al instante, sin reiniciar).
-  $('cfgPuntoOro').addEventListener('change', e => {
-    config.puntoOro = e.target.checked;
-    guardarConfig();
-    render();
+  // Modo de puntuación: ventaja / doble ventaja / punto de oro (se aplica al
+  // instante, sin reiniciar el juego en curso).
+  document.querySelectorAll('#modo .seg-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      config.scoring = b.dataset.scoring;
+      guardarConfig();
+      actualizarDescModo();
+      render();
+    });
   });
 
   // Toggle de idioma ES ⟷ EN (se aplica al instante).
